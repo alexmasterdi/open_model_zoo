@@ -22,12 +22,12 @@
 using namespace InferenceEngine;
 
 DeblurringModel::DeblurringModel(const std::string& modelFileName, const cv::Size& inputImageSize) :
-    ModelBase(modelFileName), inputHeight(inputImageSize.height), inputWidth(inputImageSize.width) {
+    ImageProcessingModel(modelFileName), inputHeight(inputImageSize.height), inputWidth(inputImageSize.width) {
+        viewInfo = cv::Size(inputWidth, inputHeight);
 }
 
 void DeblurringModel::reshape(InferenceEngine::CNNNetwork & cnnNetwork) {
     auto shapes = cnnNetwork.getInputShapes();
-    size_t blockSize = 32;
     for (auto& shape : shapes) {
         shape.second[0] = 1;
         shape.second[2] = (inputHeight + blockSize - 1)/blockSize * blockSize;
@@ -40,17 +40,17 @@ void DeblurringModel::prepareInputsOutputs(InferenceEngine::CNNNetwork& cnnNetwo
     // --------------------------- Configure input & output ---------------------------------------------
     // --------------------------- Prepare input blobs --------------------------------------------------
     ICNNNetwork::InputShapes inputShapes = cnnNetwork.getInputShapes();
-    if (inputShapes.size() != 1 && inputShapes.size() != 2)
-        throw std::logic_error("The demo supports topologies with 1 or 2 inputs only");
+    if (inputShapes.size() != 1)
+        throw std::logic_error("The demo supports topologies with 1 input only");
     std::string firstInputBlobName = inputShapes.begin()->first;
     inputsNames.push_back(firstInputBlobName);
     SizeVector& firstInputSizeVector = inputShapes[firstInputBlobName];
     if (firstInputSizeVector.size() != 4)
         throw std::logic_error("Number of dimensions for an input must be 4");
-    std::cout << firstInputSizeVector[2] << '\n';
+
     InputInfo& inputInfo = *cnnNetwork.getInputsInfo().begin()->second;
-    inputInfo.setPrecision(Precision::FP32);
-    // --------------------------- Prepare output blobs -----------------------------------------------------
+    inputInfo.setPrecision(Precision::U8);
+    // --------------------------- Prepare output blobs --------------------------------------------------
     const OutputsDataMap& outputInfo = cnnNetwork.getOutputsInfo();
     if (outputInfo.size() != 1) throw std::runtime_error("Demo supports topologies only with 1 output");
 
@@ -72,12 +72,14 @@ std::shared_ptr<InternalModelData> DeblurringModel::preprocess(const InputData& 
     int h = inputBlob->getTensorDesc().getDims()[2];
 
     cv::Mat resized;
-    if (img.rows < h && img.cols < w)
-        cv::copyMakeBorder(img, resized, 0, h - img.rows, 0, w - img.cols, cv::BORDER_CONSTANT, 0);
+    if (img.rows != inputHeight || img.cols != inputWidth)
+        cv::resize(img, resized, cv::Size(inputWidth, inputHeight), 0, 0, cv::INTER_CUBIC);
     else
-        cv::resize(img, resized, cv::Size(w, h), 0, 0, cv::INTER_CUBIC);
+        resized = img;
 
-    matU8ToBlob<float_t>(resized, inputBlob);
+    cv::Mat padded;
+    cv::copyMakeBorder(resized, padded, 0, h - inputHeight, 0, w - inputWidth, cv::BORDER_CONSTANT, 0);
+    matU8ToBlob<uint8_t>(padded, inputBlob);
 
     return std::shared_ptr<InternalModelData>(new InternalImageModelData(resized.cols, resized.rows));
 }
@@ -91,16 +93,14 @@ std::unique_ptr<ResultBase> DeblurringModel::postprocess(InferenceResult& infRes
 
     std::vector<cv::Mat> imgPlanes;
     size_t numOfPixels = outWidth * outHeight;
-    // for (int i = numOfPixels; i < 2 * numOfPixels; ++i) {
-    //     std::cout << outputData[i] << " ";
-    // }
+
     imgPlanes = std::vector<cv::Mat>{
         cv::Mat(outHeight, outWidth, CV_32FC1, &(outputData[0])),
         cv::Mat(outHeight, outWidth, CV_32FC1, &(outputData[numOfPixels])),
         cv::Mat(outHeight, outWidth, CV_32FC1, &(outputData[numOfPixels * 2]))};
 
     cv::merge(imgPlanes, result->resultImage);
-    result->resultImage = result->resultImage(cv::Rect(0, 0, std::min(inputWidth,result->resultImage.cols), std::min(inputHeight, result->resultImage.rows)));
+    result->resultImage = result->resultImage(cv::Rect(0, 0, inputWidth, inputHeight));
     result->resultImage.convertTo(result->resultImage, CV_8UC3, 255);
 
     return std::unique_ptr<ResultBase>(result);

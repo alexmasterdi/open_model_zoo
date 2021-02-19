@@ -17,7 +17,8 @@
 #include "model_base.h"
 
 #pragma once
-class SuperResolutionModel : public ModelBase {
+
+class SuperResolutionModel : public ImageProcessingModel {
 public:
     /// Constructor
     /// @param modelFileName name of model to load

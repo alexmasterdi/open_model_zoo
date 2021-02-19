@@ -18,7 +18,7 @@
 #include "opencv2/core.hpp"
 
 #pragma once
-class DeblurringModel : public ModelBase {
+class DeblurringModel : public ImageProcessingModel {
 public:
     /// Constructor
     /// @param modelFileName name of model to load
@@ -32,6 +32,7 @@ public:
     void reshape(InferenceEngine::CNNNetwork & cnnNetwork) override;
 protected:
     void prepareInputsOutputs(InferenceEngine::CNNNetwork & cnnNetwork) override;
+    size_t blockSize = 32;
     int inputHeight = 0;
     int inputWidth = 0;
     int outHeight = 0;
