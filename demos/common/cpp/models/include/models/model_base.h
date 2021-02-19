@@ -16,7 +16,6 @@
 
 #pragma once
 #include "input_data.h"
-#include <opencv2/core.hpp>
 #include "results.h"
 
 class ModelBase {
@@ -49,15 +48,4 @@ protected:
     std::vector<std::string> outputsNames;
     InferenceEngine::ExecutableNetwork* execNetwork;
     std::string modelFileName;
-};
-
-class ImageProcessingModel: public ModelBase {
-public:
-    ImageProcessingModel(const std::string& modelFileName)
-        : ModelBase(modelFileName)
-    {}
-
-    const cv::Size& getViewInfo() const { return viewInfo; }
-protected:
-    cv::Size viewInfo;
 };

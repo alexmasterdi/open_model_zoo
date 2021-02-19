@@ -18,20 +18,24 @@
 
 #pragma once
 
-class SuperResolutionModel : public ImageProcessingModel {
+class ImageProcessingModel : public ModelBase{
 public:
     /// Constructor
     /// @param modelFileName name of model to load
     /// Otherwise, image will be preprocessed and resized using OpenCV routines.
-    SuperResolutionModel(const std::string& modelFileName);
+    ImageProcessingModel(const std::string& modelFileName, const cv::Size inputImageShape=cv::Size(0, 0));
 
     std::shared_ptr<InternalModelData> preprocess(
         const InputData& inputData, InferenceEngine::InferRequest::Ptr& request) override;
     std::unique_ptr<ResultBase> postprocess(InferenceResult& infResult) override;
-
+    void reshape(InferenceEngine::CNNNetwork & cnnNetwork) override;
+    cv::Size getViewInfo() { return viewInfo; }
 protected:
     void prepareInputsOutputs(InferenceEngine::CNNNetwork & cnnNetwork) override;
+    cv::Size inputSize;
     int outHeight = 0;
     int outWidth = 0;
     int outChannels = 0;
+    std::string type;
+    cv::Size viewInfo;
 };

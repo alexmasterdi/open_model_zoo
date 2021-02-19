@@ -14,17 +14,40 @@
 // limitations under the License.
 */
 
-#include "models/super_resolution_model.h"
+#include "models/image_processing_model.h"
 #include "utils/ocv_common.hpp"
 
 using namespace InferenceEngine;
 
-SuperResolutionModel::SuperResolutionModel(const std::string& modelFileName) :
-    ImageProcessingModel(modelFileName) {
-        viewInfo = cv::Size(1920, 1080);
+ImageProcessingModel::ImageProcessingModel(const std::string& modelFileName, const cv::Size inputImageShape) :
+    ModelBase(modelFileName) {
+        if (inputImageShape == cv::Size(0, 0)) {
+            type = "super_resolution";
+            viewInfo = cv::Size(1920, 1080);
+        } else {
+            type = "deblurring";
+            inputSize = inputImageShape;
+            viewInfo = inputSize;
+        }
 }
 
-void SuperResolutionModel::prepareInputsOutputs(InferenceEngine::CNNNetwork& cnnNetwork) {
+void ImageProcessingModel::reshape(InferenceEngine::CNNNetwork & cnnNetwork) {
+    auto shapes = cnnNetwork.getInputShapes();
+    if (type == "deblurring") {
+        for (auto& shape : shapes) {
+            int blockSize = 32;
+            shape.second[0] = 1;
+            shape.second[2] = (inputSize.height + blockSize - 1)/blockSize * blockSize;
+            shape.second[3] = (inputSize.width + blockSize - 1)/blockSize * blockSize;
+        }
+    } else {
+        for (auto& shape : shapes)
+            shape.second[0] = 1;
+    }
+    cnnNetwork.reshape(shapes);
+}
+
+void ImageProcessingModel::prepareInputsOutputs(InferenceEngine::CNNNetwork& cnnNetwork) {
     // --------------------------- Configure input & output ---------------------------------------------
     // --------------------------- Prepare input blobs --------------------------------------------------
     ICNNNetwork::InputShapes inputShapes = cnnNetwork.getInputShapes();
@@ -71,7 +94,7 @@ void SuperResolutionModel::prepareInputsOutputs(InferenceEngine::CNNNetwork& cnn
     outWidth = (int)(outSizeVector[3]);
 }
 
-std::shared_ptr<InternalModelData> SuperResolutionModel::preprocess(const InputData& inputData, InferenceEngine::InferRequest::Ptr& request) {
+std::shared_ptr<InternalModelData> ImageProcessingModel::preprocess(const InputData& inputData, InferenceEngine::InferRequest::Ptr& request) {
     auto imgData = inputData.asRef<ImageInputData>();
     auto& img = imgData.inputImage;
 
@@ -95,7 +118,7 @@ std::shared_ptr<InternalModelData> SuperResolutionModel::preprocess(const InputD
     return std::shared_ptr<InternalModelData>(new InternalImageModelData(img.cols, img.rows));
 }
 
-std::unique_ptr<ResultBase> SuperResolutionModel::postprocess(InferenceResult& infResult) {
+std::unique_ptr<ResultBase> ImageProcessingModel::postprocess(InferenceResult& infResult) {
     ImageProcessingResult* result = new ImageProcessingResult;
     *static_cast<ResultBase*>(result) = static_cast<ResultBase&>(infResult);
 
@@ -118,6 +141,12 @@ std::unique_ptr<ResultBase> SuperResolutionModel::postprocess(InferenceResult& i
     for (auto & img : imgPlanes)
         img.convertTo(img, CV_8UC1, 255);
 
-    cv::merge(imgPlanes, result->resultImage);
+    cv::Mat resultImg;
+    cv::merge(imgPlanes, resultImg);
+    if (type == "deblurring")
+        cv::resize(resultImg, result->resultImage, inputSize);
+    else
+        result->resultImage = resultImg;
+
     return std::unique_ptr<ResultBase>(result);
 }
