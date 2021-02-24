@@ -1,6 +1,6 @@
 # Image Processing C++ Demo
 
-This demo processes the image according to the selected type of processing. At this moment demo can work with the next types:
+This demo processes the image according to the selected type of processing. The demo can work with the next types:
 
 * `super_resolution`
 * `deblurring`
@@ -27,12 +27,12 @@ Super resolution:
 
 ## How It Works
 
-Before running the demo, user must choose type of processing and model for this processing. \
+Before running the demo, user must choose type of processing and model for this processing.
 For `super_resolution` user can choose the next models:
 
-* [single-image-super-resolution-1032](../../../../models/intel/single-image-super-resolution-1032/description/single-image-super-resolution-1032.md) -  It enhances the resolution of the input image by a factor of 4.
-* [single-image-super-resolution-1033](../../../../models/intel/single-image-super-resolution-1033/description/single-image-super-resolution-1033.md) -  It enhances the resolution of the input image by a factor of 3.
-* [text-image-super-resolution-0001](../../../../models/intel/text-image-super-resolution-0001/description/text-image-super-resolution-0001.md) -  A tiny model to 3x upscale scanned images with text.
+* [single-image-super-resolution-1032](../../../../models/intel/single-image-super-resolution-1032/description/single-image-super-resolution-1032.md) enhances the resolution of the input image by a factor of 4.
+* [single-image-super-resolution-1033](../../../../models/intel/single-image-super-resolution-1033/description/single-image-super-resolution-1033.md) enhances the resolution of the input image by a factor of 3.
+* [text-image-super-resolution-0001](../../../../models/intel/text-image-super-resolution-0001/description/text-image-super-resolution-0001.md) - a tiny model to 3x upscale scanned images with text.
 
 For `deblurring` user can use [deblurgan-v2](../../../../models/public/deblurgan-v2/deblurgan-v2.md) - generative adversarial network for single image motion deblurring.
 
@@ -45,7 +45,6 @@ The demo runs inference and shows results for each image captured from an input.
 Running the application with the `-h` option yields the following usage message:
 
 ```
-./image_processing_demo -h
 [ INFO ] InferenceEngine: <version>
 
 image_processing_demo_async [OPTION]
@@ -78,7 +77,7 @@ To run the demo, you can use public or pre-trained models. To download the pre-t
 
 You can use the following command to enhance the resolution of the images captured by a camera using a pre-trained single-image-super-resolution-1033 network:
 
-```sh
+```
 ./image_processing_demo -i 0 -m single-image-super-resolution-1033.xml -at super_resolution
 ```
 

@@ -89,7 +89,7 @@ std::shared_ptr<InternalModelData> SegmentationModel::preprocess(const InputData
 }
 
 std::unique_ptr<ResultBase> SegmentationModel::postprocess(InferenceResult& infResult) {
-    SegmentationResult* result = new SegmentationResult;
+    ImageProcessingResult* result = new ImageProcessingResult;
     *static_cast<ResultBase*>(result) = static_cast<ResultBase&>(infResult);
 
     const auto& inputImgSize = infResult.internalModelData->asRef<InternalImageModelData>();
@@ -97,7 +97,7 @@ std::unique_ptr<ResultBase> SegmentationModel::postprocess(InferenceResult& infR
     LockedMemory<const void> outMapped = infResult.getFirstOutputBlob()->rmap();
     const float * const predictions = outMapped.as<float*>();
 
-    result->mask = cv::Mat(outHeight, outWidth, CV_8UC1);
+    result->resultImage = cv::Mat(outHeight, outWidth, CV_8UC1);
     for (int rowId = 0; rowId < outHeight; ++rowId) {
         for (int colId = 0; colId < outWidth; ++colId) {
             std::size_t classId = 0;
@@ -115,10 +115,10 @@ std::unique_ptr<ResultBase> SegmentationModel::postprocess(InferenceResult& infR
                 }
             }
 
-            result->mask.at<uint8_t>(rowId, colId) = classId;
+            result->resultImage.at<uint8_t>(rowId, colId) = classId;
         }
     }
-    cv::resize(result->mask, result->mask, cv::Size(inputImgSize.inputImgWidth, inputImgSize.inputImgHeight),0,0,cv::INTER_NEAREST);
+    cv::resize(result->resultImage, result->resultImage, cv::Size(inputImgSize.inputImgWidth, inputImgSize.inputImgHeight),0,0,cv::INTER_NEAREST);
 
     return std::unique_ptr<ResultBase>(result);
 }

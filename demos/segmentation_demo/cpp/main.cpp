@@ -170,7 +170,7 @@ cv::Mat applyColorMap(cv::Mat input) {
     return out;
 }
 
-cv::Mat renderSegmentationData(const SegmentationResult& result) {
+cv::Mat renderSegmentationData(const ImageProcessingResult& result) {
     if (!result.metaData) {
         throw std::invalid_argument("Renderer: metadata is null");
     }
@@ -183,7 +183,7 @@ cv::Mat renderSegmentationData(const SegmentationResult& result) {
     }
 
     // Visualizing result data over source image
-    return inputImg / 2 + applyColorMap(result.mask) / 2;
+    return inputImg / 2 + applyColorMap(result.resultImage) / 2;
 }
 
 int main(int argc, char *argv[]) {
@@ -244,10 +244,10 @@ int main(int argc, char *argv[]) {
             pipeline.waitForData();
 
             //--- Checking for results and rendering data if it's ready
-            //--- If you need just plain data without rendering - cast result's underlying pointer to SegmentationResult*
+            //--- If you need just plain data without rendering - cast result's underlying pointer to ImageProcessingResult*
             //    and use your own processing instead of calling renderSegmentationData().
             while ((result = pipeline.getResult()) && keepRunning) {
-                cv::Mat outFrame = renderSegmentationData(result->asRef<SegmentationResult>());
+                cv::Mat outFrame = renderSegmentationData(result->asRef<ImageProcessingResult>());
                 //--- Showing results and device information
                 presenter.drawGraphs(outFrame);
                 metrics.update(result->metaData->asRef<ImageMetaData>().timeStamp,
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
         //// ------------ Waiting for completion of data processing and rendering the rest of results ---------
         pipeline.waitForTotalCompletion();
         while (result = pipeline.getResult()) {
-            cv::Mat outFrame = renderSegmentationData(result->asRef<SegmentationResult>());
+            cv::Mat outFrame = renderSegmentationData(result->asRef<ImageProcessingResult>());
             //--- Showing results and device information
             presenter.drawGraphs(outFrame);
             metrics.update(result->metaData->asRef<ImageMetaData>().timeStamp,

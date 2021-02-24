@@ -74,8 +74,8 @@ struct RetinaFaceDetectionResult : public DetectionResult {
     std::vector<cv::Point2f> landmarks;
 };
 
-struct SegmentationResult : public ResultBase {
-    cv::Mat mask;
+struct ImageProcessingResult: public ResultBase {
+    cv::Mat resultImage;
 };
 
 struct HumanPose {
@@ -85,8 +85,4 @@ struct HumanPose {
 
 struct HumanPoseResult : public ResultBase {
     std::vector<HumanPose> poses;
-};
-
-struct ImageProcessingResult: public ResultBase {
-    cv::Mat resultImage;
 };
