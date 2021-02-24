@@ -52,7 +52,7 @@ image_processing_demo_async [OPTION]
 Options:
 
     -h                        Print a usage message.
-    -pt "<type>"              Required. Type of processing: super_resolution, deblurring
+    -at "<type>"              Required. Type of architecture: super_resolution, deblurring
     -i "<path>"               Required. An input to process. The input must be a single image, a folder of images, video file or camera id.
     -m "<path>"               Required. Path to an .xml file with a trained model.
     -o "<path>"               Optional. Name of output to save.
