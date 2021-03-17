@@ -69,7 +69,7 @@ class HumanPoseHRNetAdapter(Adapter):
             num_joints=17,
             adjust=True,
             refine=True,
-            dist_reweight=False,
+            dist_reweight=True,
             delta=0.0,
             max_num_people=30,
             detection_threshold=0.1,
@@ -151,13 +151,6 @@ class HumanPoseHRNetAdapter(Adapter):
 
 
 class AssociativeEmbeddingHRNetDecoder(AssociativeEmbeddingDecoder):
-    @staticmethod
-    def _max_match(scores):
-        m = Munkres()
-        tmp = m.compute(scores)
-        tmp = np.array(tmp).astype(np.int32)
-        return tmp
-
     @staticmethod
     def adjust(ans, heatmaps):
         H, W = heatmaps.shape[-2:]
